@@ -85,6 +85,7 @@ $navLink = function (string $key, string $href, string $label) use ($nav): strin
     Served by <code><?= e(gethostname()) ?></code> · DB: <code><?= e(config('DB_HOST', 'localhost')) ?></code> · Files: <code>local disk (<?= e(config('UPLOAD_DIR', 'storage/uploads')) ?>)</code>
     <div style="text-align:center; margin-top:8px;">Deployed by Rusnak Daniel · IA2404</div>
   </div>
+<div style="text-align:center;">LR3</div>
 </footer>
 
 </body>
