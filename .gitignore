@@ -5,3 +5,5 @@
 /storage/sessions/*
 !/storage/sessions/.gitkeep
 /storage/*.log
+src/storage.php.bak-disk
+timecapsule.sql
