@@ -1,4 +1,12 @@
 /vendor/
 /.env
+/storage/uploads/*
+!/storage/uploads/.gitkeep
+/storage/sessions/*
+!/storage/sessions/.gitkeep
+/storage/*.log
 src/storage.php.bak-disk
 timecapsule.sql
+
+# Private keys
+*.pem
