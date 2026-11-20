@@ -222,9 +222,9 @@ Standard-IA через 30 дней и удаляются через 90 дней.
 → This account) с политикой `timecapsule-dev-app-s3`. Роль взята на себя через
 `aws sts assume-role`, под её правами прогнаны 10 команд.
 
-![Тестовая роль создана](../../screenshots/lab4/lab4_08_tester_role.png)
 ![assume-role identity](../../screenshots/lab4/lab4_08_tester_identity.png)
-![Таблица проверки прав](../../screenshots/lab4/lab4_08_tester_table.png)
+![Таблица проверки прав (команды 1–10)](../../screenshots/lab4/lab4_08_tester_table.png)
+![Команда 8 — DeleteObjectVersion запрещён](../../screenshots/lab4/lab4_08_tester_table_2.png)
 
 > Примечание: на момент проверки политика приложения уже урезана (задание 13 —
 > убран `s3:ListBucket`), поэтому команды со списком объектов дают AccessDenied
