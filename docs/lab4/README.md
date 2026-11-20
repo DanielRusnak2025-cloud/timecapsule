@@ -55,7 +55,6 @@ ACLs disabled, Block all public access, шифрование SSE-S3, обяза�
 Содержимое бакета просмотрено тремя способами, метаданные прочитаны через
 `head-object`.
 
-![Загрузка через cp и sync](../../screenshots/lab4/lab4_02_cp_sync.png)
 ![Три команды ls](../../screenshots/lab4/lab4_02_ls.png)
 ![head-object](../../screenshots/lab4/lab4_02_head_object.png)
 
@@ -217,6 +216,58 @@ Standard-IA через 30 дней и удаляются через 90 дней.
   действия и не применится — запрос получит AccessDenied, хотя политика
   синтаксически верна.
 
+## Задание 8. Проверка прав через тестовую роль
+
+Создана тестовая роль `timecapsule-dev-s3-tester` (Trusted entity: AWS account
+→ This account) с политикой `timecapsule-dev-app-s3`. Роль взята на себя через
+`aws sts assume-role`, под её правами прогнаны 10 команд.
+
+![Тестовая роль создана](../../screenshots/lab4/lab4_08_tester_role.png)
+![assume-role identity](../../screenshots/lab4/lab4_08_tester_identity.png)
+![Таблица проверки прав](../../screenshots/lab4/lab4_08_tester_table.png)
+
+> Примечание: на момент проверки политика приложения уже урезана (задание 13 —
+> убран `s3:ListBucket`), поэтому команды со списком объектов дают AccessDenied
+> по неявному запрету. Это наглядно показывает принцип минимальных привилегий.
+
+| № | Команда | Ожидал | Получил | Какое правило сработало |
+|---|---------|--------|---------|------------------------|
+| 1 | `cp test.txt → uploads/` | разрешено | ✅ upload | Allow (PutObject на uploads/*) |
+| 2 | `ls uploads/` | AccessDenied | ❌ denied | Неявный запрет (нет ListBucket) |
+| 3 | `ls` (весь бакет) | AccessDenied | ❌ denied | Неявный запрет (нет ListBucket) |
+| 4 | `cp uploads/photo.txt -` | разрешено | ✅ `photo placeholder` | Allow (GetObject на uploads/*) |
+| 5 | `ls backups/` | AccessDenied | ❌ denied | Неявный запрет (нет ListBucket) |
+| 6 | `cp test.txt → backups/` | AccessDenied | ❌ denied | Неявный запрет (PutObject только на uploads/*) |
+| 7 | `list-object-versions` | AccessDenied | ❌ denied | Неявный запрет (нет ListBucketVersions) |
+| 8 | `delete-object --version-id` | AccessDenied | ❌ denied | Неявный запрет (нет DeleteObjectVersion) |
+| 9 | `rm uploads/test.txt` | разрешено | ✅ delete (marker) | Allow (DeleteObject на uploads/*) |
+| 10 | `ls uploads/` по HTTP | AccessDenied | ❌ denied | **Явный Deny** в политике бакета (HTTPS-only) |
+
+**Контрольные вопросы:**
+
+- **Чем политика доверия роли отличается от политики прав?** Trust-policy
+  определяет, *кто* может принять роль (здесь — мой аккаунт через
+  `sts:AssumeRole`). Permissions-policy определяет, *что* роль умеет (Get / Put /
+  Delete на `uploads/*`).
+- **Что произошло с test.txt после команды 9, можно ли восстановить?**
+  DeleteObject при включённом версионировании поставил delete marker — объект
+  «скрылся», но прежняя версия цела, поэтому его можно восстановить, удалив
+  delete marker.
+- **Сможет ли злоумышленник с credentials приложения уничтожить файлы
+  безвозвратно?** Нет: у роли нет `s3:DeleteObjectVersion` (команда 8 →
+  AccessDenied), поэтому стереть версию навсегда нельзя — только поставить
+  обратимый delete marker.
+- **А если бы в политике было s3:\*?** Тогда роль получила бы все действия,
+  включая `DeleteObjectVersion`, `PutBucketPolicy`, `DeleteBucket` —
+  злоумышленник смог бы безвозвратно уничтожить данные, открыть бакет публично
+  или удалить его. Поэтому `s3:*` недопустим.
+
+Важный вывод: команды 2 и 10 обе вернули AccessDenied, но по разным причинам.
+№2 — **неявный запрет** (нет Allow на ListBucket). №10 — **явный Deny** в
+политике бакета (запрос по HTTP под условием `aws:SecureTransport: false`).
+Это демонстрирует порядок вычисления прав в IAM: **Explicit Deny > Allow >
+Implicit Deny**.
+
 ## Задание 9. Роль сервера
 
 Создана роль `timecapsule-dev-app-role` (Trusted entity: AWS service → EC2) с
@@ -282,7 +333,6 @@ https://github.com/DanielRusnak2025-cloud/timecapsule/commits/main
 строке — адрес `...s3.eu-central-1.amazonaws.com/uploads/...` с параметрами
 `X-Amz-*`. Старые капсулы тоже отдают вложения из S3.
 
-![Подвал: Files: S3](../../screenshots/lab4/lab4_12_footer.png)
 ![Новый объект в uploads/](../../screenshots/lab4/lab4_12_new_object.png)
 ![Presigned URL в браузере](../../screenshots/lab4/lab4_12_presigned_browser.png)
 
